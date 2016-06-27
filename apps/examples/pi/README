@@ -1,0 +1,5 @@
+Running:
+
+make -f Makefile.<OCR_TYPE> run <points_per_task>
+
+where points_per_task is the optional number of points each task creates for computing PI
