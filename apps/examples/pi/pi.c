@@ -19,7 +19,7 @@
 #include <time.h>
 
 #define ITERS 10000000
-#define TASKS_COUNT 50
+#define TASKS_COUNT 5
 
 ocrGuid_t workerEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
     struct drand48_data drand_buf;
