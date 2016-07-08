@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
 #define ITERS 10000000
 #define TASKS_COUNT 5
@@ -49,18 +50,21 @@ void printCurrentAffinity(char* edtName) {
 	}
 }
 
-void getEdtAffinityHints(ocrHint_t* p0Hint, ocrHint_t* p1Hint) {
-	ocrGuid_t aff0;
-	ocrAffinityGetAt(AFFINITY_PD, 0, &aff0);
+void getEdtAffinityHints(ocrHint_t* p0Hint, ocrHint_t* p1Hint, ocrHint_t* p2Hint) {
+	ocrGuid_t aff0, aff1, aff2;
 
-	ocrGuid_t aff1;
+	ocrAffinityGetAt(AFFINITY_PD, 0, &aff0);
 	ocrAffinityGetAt(AFFINITY_PD, 1, &aff1);
+	ocrAffinityGetAt(AFFINITY_PD, 2, &aff2);
 
 	ocrHintInit(p0Hint,OCR_HINT_EDT_T);
 	ocrSetHintValue(p0Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff0));
 
 	ocrHintInit(p1Hint,OCR_HINT_EDT_T);
 	ocrSetHintValue(p1Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff1));
+
+	ocrHintInit(p2Hint,OCR_HINT_EDT_T);
+	ocrSetHintValue(p2Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff2));
 }
 
 void getDbAffinityHints(ocrHint_t* p0Hint, ocrHint_t* p1Hint, ocrGuid_t* affinities) {
@@ -118,16 +122,22 @@ ocrGuid_t workerEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 ocrGuid_t shutdownEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	printCurrentAffinity("shutdownEdt");
-
     u32 sumPoints = 0;
+    u32 successfulTasksCount = 0;
     float PI = 0.0;
     int i = 0;
     for (i = 0 ; i < TASKS_COUNT; i++) {
-        u32* taskOutput = depv[i].ptr;
-        sumPoints += *taskOutput;
+    	if (!ocrGuidIsFailure(depv[i].guid)) {
+    		u32* taskOutput = depv[i].ptr;
+        	sumPoints += *taskOutput;
+        	successfulTasksCount ++;
+    	}
+    	else {
+    		PRINTF("WARNING - Ignoring input from failed task %d \n" , i);
+    	}
     }
 
-    PI = 4.0f * sumPoints / (ITERS * TASKS_COUNT) ;
+    PI = 4.0f * sumPoints / (ITERS * successfulTasksCount) ;
     PRINTF("PI equals %f \n" , PI);
 
     //destroy the workers data blocks
@@ -139,19 +149,28 @@ ocrGuid_t shutdownEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
     return NULL_GUID;
 }
 
+ocrGuid_t killEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
+	printCurrentAffinity("killEdt");
+	//sleep for some time before killing the EDT's process
+	usleep(100);
+    assert(false);
+    return NULL_GUID;
+}
+
 ocrGuid_t mainEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	printCurrentAffinity("mainEdt");
 
     /********* Prepare Affinity Hints  *************/
 
-    ocrHint_t p0EdtAffinityHint, p1EdtAffinityHint;
-    getEdtAffinityHints(&p0EdtAffinityHint, &p1EdtAffinityHint);
+    ocrHint_t p0EdtAffinityHint, p1EdtAffinityHint, p2EdtAffinityHint;
+    getEdtAffinityHints(&p0EdtAffinityHint, &p1EdtAffinityHint, &p2EdtAffinityHint);
 
 
     /********* Prepare Templates and EDTs  *************/
-    ocrGuid_t workerEdtTemplateGuid, shutdownEdtTemplateGuid;
+    ocrGuid_t workerEdtTemplateGuid, shutdownEdtTemplateGuid, killEdtTemplateGuid;
     ocrEdtTemplateCreate(&workerEdtTemplateGuid, workerEdt, 0 /*paramc*/, 1 /*depc*/);
-    ocrEdtTemplateCreate(&shutdownEdtTemplateGuid, shutdownEdt, 0 /*paramc*/, TASKS_COUNT /*depc*/);
+    ocrEdtTemplateCreate(&shutdownEdtTemplateGuid, shutdownEdt, 0 /*paramc*/, TASKS_COUNT+1 /*depc*/);
+    ocrEdtTemplateCreate(&killEdtTemplateGuid, killEdt, 0 /*paramc*/, 1 /*depc*/);
 
     ocrGuid_t shutdownEdtGuid;
     ocrEdtCreate(&shutdownEdtGuid , shutdownEdtTemplateGuid , EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
@@ -159,11 +178,26 @@ ocrGuid_t mainEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
     //create the worker tasks
     int i;
-    for (i = 0 ; i < TASKS_COUNT; i++) {
+    for (i = 0 ; i <= TASKS_COUNT; i++) {
         ocrGuid_t workerOutputEventGuid;
         ocrGuid_t workerEdtGuid;
-        ocrEdtCreate(&workerEdtGuid, workerEdtTemplateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
+
+        ocrGuid_t templateGuid;
+        if (i==0) {
+        	templateGuid = killEdtTemplateGuid;
+        }
+        else{
+        	templateGuid = workerEdtTemplateGuid;
+        }
+
+        if (i < TASKS_COUNT/2) {
+        	ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
                             /*prop=*/EDT_PROP_NONE, &p1EdtAffinityHint, &workerOutputEventGuid);
+        }
+        else {
+        	ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
+                            /*prop=*/EDT_PROP_NONE, &p2EdtAffinityHint, &workerOutputEventGuid);
+        }
 
         //shutdownEdt depends on all workerEdts
         ocrAddDependence(workerOutputEventGuid, shutdownEdtGuid, i, DB_MODE_RO);
