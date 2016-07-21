@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define LOCAL_EQUATION(i, j, above,left) (1*(i+j+above+left))
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
 #define RIGHT_EQUATION(i, j, above,left) (0.50*(i+j+above+left))
 
@@ -71,9 +72,9 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 	/* Run computation on local tile */
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
-
+    u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
     /* Satisfy the right and below events */
-    PRINTF("tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) :-> (toRight=%d) (toBottom=%d) \n", i, j,*aboveVal,*leftVal, rightVal, belowVal);
+    PRINTF("tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
 	ocrGuid_t rightDBGuid;
@@ -96,7 +97,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     ocrDbDestroy(depv[1].guid);
     
     if ( i == ROWS && j == COLS ) {
-	    PRINTF("calling shutdown\n");
+	    PRINTF("Shutting down,  score = %d \n", localVal);
     	ocrShutdown();
     }
     return NULL_GUID;
