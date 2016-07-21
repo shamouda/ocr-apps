@@ -42,24 +42,20 @@ ocrHint_t getAffinity(int i, int j, int affinityCount) {
 	return hint;
 }
 
-int printCurrentAffinity(char* edtName) {
+int currentAffinity() {
 	// Create EDT hints
 	ocrGuid_t* affinities;
 	u64 affinityCount;
-
 	ocrAffinityCount(AFFINITY_PD, &affinityCount);
 	ocrGuid_t affDbGuid;
 	ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
 	ocrDbRelease(affDbGuid);
-
 	ocrGuid_t curAffinity;
 	ocrAffinityGetCurrent(&curAffinity);
-
 	int location=0;
 	for (; location < affinityCount; location++) {
          if (ocrGuidIsEq(curAffinity,affinities[location])){
-        	 //PRINTF("EDT[%s]  Location[%d] \n", edtName, location);
         	 break;
          }
 	}
@@ -71,6 +67,7 @@ typedef struct{
     u64 j;
     u64 COLS;
     u64 ROWS;
+    u64 VICTIM;
     ocrGuid_t below;
     ocrGuid_t right;
 }TileEdtPRM_t;
@@ -80,26 +77,50 @@ typedef struct{
     ocrGuid_t right;
 }Tile_t;
 
+void killAtAffinity(int victim) {
+	int currAffinity = currentAffinity();
+	if (currAffinity == victim) {
+        assert ( false && "killing here" );
+	}
+}
 
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
-    u64* leftVal = (u64*)depv[0].ptr;
-	u64* aboveVal = (u64*)depv[1].ptr;
-	
-	TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
+    TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
 	u64 ROWS = (u64) paramIn->ROWS;
 	u64 COLS = (u64) paramIn->COLS;
+	u64 VICTIM = (u64) paramIn->VICTIM;
 	ocrGuid_t right = paramIn->right;
 	ocrGuid_t below = paramIn->below;
+
+	killAtAffinity(VICTIM);
+
+    PRINTF("Here[%d]  tileEdt(%d,%d) checking the dependencies \n", currentAffinity(), i, j );
+    bool depSuccess = true;
+    u64 di = 0;
+    for ( ; di < depc; di++) {
+	    if (ocrGuidIsFailure(depv[di].guid)) {
+              PRINTF("Here[%d]  tileEdt(%d,%d)   dep(%d) is a FAILURE_GUID ... \n", currentAffinity(), i, j , di);
+              depSuccess = false;
+	    }
+	}
+
+    if (!depSuccess) {
+    	PRINTF("Here[%d]  tileEdt(%d,%d)   returns ....................> \n", currentAffinity(), i, j );
+    	return FAILURE_GUID;
+    }
+
+    u64* leftVal = (u64*)depv[0].ptr;
+	u64* aboveVal = (u64*)depv[1].ptr;
 
 	/* Run computation on local tile */
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
     u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
     /* Satisfy the right and below events */
-    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", printCurrentAffinity("tileEdt"), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
+    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
 	ocrGuid_t rightDBGuid;
@@ -127,7 +148,6 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     }
     return NULL_GUID;
 }
-
 
 static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) {
 	u64 i, j;
@@ -164,14 +184,18 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	int RANKS = getAffinityCount();
 	int ROWS = 3, COLS = 3;
+	int VICTIM = -1;
     u32 input;
     u32 argc = getArgc(depv[0].ptr);
-    if((argc != 3)) {
-        PRINTF("Usage: simple <rows> <cols>, defaulting to 3 X 3\n");
+
+    if((argc != 4)) {
+        PRINTF("Usage: simple <rows> <cols> <victim>, defaulting to 3 X 3 , no victim \n");
     } else {
     	ROWS = atoi(getArgv(depv[0].ptr, 1));
     	COLS = atoi(getArgv(depv[0].ptr, 2));
+    	VICTIM = atoi(getArgv(depv[0].ptr, 3));
     }
+
     PRINTF("working with %d X %d   nRanks=%d \n", ROWS, COLS, RANKS);
 
     TileEdtPRM_t edtParamv;
@@ -204,7 +228,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
         	edtParamv.j = j;
         	edtParamv.ROWS = ROWS;
 			edtParamv.COLS = COLS;
-
+			edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
