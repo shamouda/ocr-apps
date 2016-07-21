@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 
 #define LOCAL_EQUATION(i, j, above,left) (1*(i+j+above+left))
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
