@@ -122,13 +122,14 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
+    /*
 	ocrGuid_t rightDBGuid;
 	u64 *rightDBGuid_data ;
 	ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	*rightDBGuid_data = rightVal;
 	ocrDbRelease(rightDBGuid);
 	ocrEventSatisfy(right, rightDBGuid);
-
+*/
     /* Allocate datablock for below value */
 	ocrGuid_t belowDBGuid;
 	u64* belowDBGuid_data = NULL;
@@ -243,7 +244,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             //ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
 
             /* add dependency to the EDT from the north */
-            ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
+            ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 0, DB_MODE_CONST);
         }
     }
 
