@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+#include <unisd.h>
 
 #define LOCAL_EQUATION(i, j, above,left) (1*(i+j+above+left))
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
@@ -84,6 +85,7 @@ void killAtAffinity(int victim) {
 }
 
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
+	sleep(10);
     TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
@@ -112,7 +114,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     }
 
     u64* leftVal = (u64*)depv[0].ptr;
-	u64* aboveVal = leftVal;// (u64*)depv[1].ptr;
+	u64* aboveVal = (u64*)depv[1].ptr;
 
 	/* Run computation on local tile */
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
@@ -122,14 +124,13 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
-    /*
 	ocrGuid_t rightDBGuid;
 	u64 *rightDBGuid_data ;
 	ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	*rightDBGuid_data = rightVal;
 	ocrDbRelease(rightDBGuid);
 	ocrEventSatisfy(right, rightDBGuid);
-*/
+
     /* Allocate datablock for below value */
 	ocrGuid_t belowDBGuid;
 	u64* belowDBGuid_data = NULL;
@@ -250,46 +251,3 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
     return NULL_GUID;
 }
-
-
-
-/* Results */
-/*  3 X 3
-tileEdt  :<- (i=1) (j=1) (above=0) (left=0)
-         :-> (toRight=1) (toBottom=0)
-
-tileEdt  :<- (i=1) (j=2) (above=0) (left=1)
-         :-> (toRight=2) (toBottom=1)
-
-tileEdt  :<- (i=1) (j=3) (above=0) (left=2)
-         :-> (toRight=3) (toBottom=1)
-
-
-tileEdt  :<- (i=2) (j=1) (above=0) (left=0)
-         :-> (toRight=1) (toBottom=0)
-tileEdt  :<- (i=2) (j=2) (above=1) (left=1)
-         :-> (toRight=3) (toBottom=1)
-tileEdt  :<- (i=2) (j=3) (above=1) (left=3)
-         :-> (toRight=4) (toBottom=2)
-
-
-tileEdt  :<- (i=3) (j=1) (above=0) (left=0)
-         :-> (toRight=2) (toBottom=1)
-tileEdt  :<- (i=3) (j=2) (above=1) (left=2)
-         :-> (toRight=4) (toBottom=2)
-tileEdt  :<- (i=3) (j=3) (above=2) (left=4)
-         :-> (toRight=6) (toBottom=3)
-*/
-
-/* Result 2 X 2
-
-tileEdt  :<- (i=1) (j=1) (above=0) (left=0)
-         :-> (toRight=1) (toBottom=0)
-tileEdt  :<- (i=1) (j=2) (above=0) (left=1)
-         :-> (toRight=2) (toBottom=1)
-
-tileEdt  :<- (i=2) (j=1) (above=0) (left=0)
-         :-> (toRight=1) (toBottom=0)
-tileEdt  :<- (i=2) (j=2) (above=1) (left=1)
-         :-> (toRight=3) (toBottom=1)
-*/
