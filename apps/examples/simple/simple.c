@@ -56,8 +56,8 @@ typedef struct{
     ocrGuid_t right;
 }Tile_t;
 
+
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
-	PRINTF("tileEdt paramc=%d\n", paramc);
     u64* leftVal = (u64*)depv[0].ptr;
 	u64* aboveVal = (u64*)depv[1].ptr;
 	
@@ -65,16 +65,17 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
-	PRINTF("tileEdt - started (i=%d) (j=%d) \n", i, j);
-	/* Run a smith-waterman on the local tile */
-    //step();
+	ocrGuid_t right = paramIn->right;
+	ocrGuid_t below = paramIn->below;
+
+	/* Run computation on local tile */
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
-    /******************************************/
-    ocrGuid_t right = paramIn->right;
-    ocrGuid_t below = paramIn->below;
 
-    /* Allocate datablock for right column of the local tile */
+    /* Satisfy the right and below events */
+    PRINTF("tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) :-> (toRight=%d) (toBottom=%d) \n", i, j,*aboveVal,*leftVal, rightVal, belowVal);
+
+    /* Allocate datablock for rightValue */
 	ocrGuid_t rightDBGuid;
 	u64 *rightDBGuid_data ;
 	ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
@@ -82,14 +83,13 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 	ocrDbRelease(rightDBGuid);
 	ocrEventSatisfy(right, rightDBGuid);
 
-    /* Allocate datablock for bottom row of the local tile */
+    /* Allocate datablock for below value */
 	ocrGuid_t belowDBGuid;
 	u64* belowDBGuid_data = NULL;
 	ocrDbCreate( &belowDBGuid, (void *)&belowDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	*belowDBGuid_data = belowVal;
 	ocrDbRelease(belowDBGuid);
 	ocrEventSatisfy(below, belowDBGuid);
-	
 
     /* We can also free all the input DBs we get */
     ocrDbDestroy(depv[0].guid);
@@ -115,7 +115,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix ) {
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_0_j_below);
-        PRINTF("satisfy (%d, %d).below ...\n", 0, j);
+        //PRINTF("satisfy (%d, %d).below ...\n", 0, j);
         ocrEventSatisfy(tile_matrix[0][j].below, db_guid_0_j_below);
     }
 
@@ -129,7 +129,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix ) {
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_i_0_rc);
-        PRINTF("satisfy (%d, %d).right ...\n", i, 0);
+        //PRINTF("satisfy (%d, %d).right ...\n", i, 0);
         ocrEventSatisfy(tile_matrix[i][0].right, db_guid_i_0_rc);
     }
 }
@@ -147,7 +147,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	for ( i = 0; i < ROWS+1; ++i ) {
 	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
-	    	PRINTF("Tile [%d][%d] created \n", i, j);
+	    	//PRINTF("Tile [%d][%d] created \n", i, j);
 	        /* Create readiness events for every tile */
             ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
             ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
@@ -161,15 +161,14 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
     for ( i = 1; i < ROWS+1; ++i ) {
         for ( j = 1; j < COLS+1; ++j ) {
-        	PRINTF("createEdt ( %d, %d ) \n", i , j );
+        	//PRINTF("createEdt ( %d, %d ) \n", i , j );
             /* Box function paramIn and put them on the heap for lifetime */
-
         	edtParamv.i = i;
         	edtParamv.j = j;
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
-            /* Create an event-driven tasks of smith_waterman tasks */
+            /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
@@ -183,7 +182,6 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
         }
     }
-
 
     return NULL_GUID;
 }
