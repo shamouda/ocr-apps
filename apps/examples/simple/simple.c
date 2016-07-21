@@ -22,8 +22,8 @@
 //row affinity
 #define AFFINITY_MODE_ROW
 
-int getAffinityCount() {
-	int affinityCount;
+u64 getAffinityCount() {
+	u64 affinityCount;
 	ocrAffinityCount(AFFINITY_PD, &affinityCount);
 	return affinityCount;
 }
@@ -62,8 +62,8 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc /*2*/, ocrEdtDep_t depv[])
 	ocrGuid_t rightEvt = parameters->right;
 
 	/******************************************/
-	u64 aboveVal = *(depv[0].ptr);
-	u64 leftVal = *(depv[1].ptr);
+	u64 aboveVal = *((u64*)depv[0].ptr);
+	u64 leftVal = *((u64*)depv[1].ptr);
 
     u64 belowVal = BELOW_EQUATION(i,j,aboveVal,leftVal);
     u64 rightVal = RIGHT_EQUATION(i,j,aboveVal,leftVal);
@@ -96,7 +96,7 @@ static void initialize_border_values( Tile_t** tile_matrix ) {
         ocrGuid_t db_guid_0_j_brow;
         void* db_guid_0_j_brow_data;
         ocrDbCreate( &db_guid_0_j_brow, &db_guid_0_j_brow_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC );
-        allocated = (u64*)db_guid_0_j_brow_data;
+        u64* allocated = (u64*)db_guid_0_j_brow_data;
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_0_j_brow);
@@ -109,7 +109,7 @@ static void initialize_border_values( Tile_t** tile_matrix ) {
         ocrGuid_t db_guid_i_0_rc;
         void* db_guid_i_0_rc_data;
         ocrDbCreate( &db_guid_i_0_rc, &db_guid_i_0_rc_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC );
-        allocated = (u64*)db_guid_i_0_rc_data;
+        u64* allocated = (u64*)db_guid_i_0_rc_data;
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_i_0_rc);
