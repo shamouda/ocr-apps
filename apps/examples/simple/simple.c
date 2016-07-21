@@ -206,7 +206,8 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	ocrDbCreate(&db_tmp, (void **)&tile_matrix, sizeof(Tile_t*)*(ROWS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	for ( i = 0; i < ROWS+1; ++i ) {
-	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+		ocrHint_t hint = getAffinity(i,0,RANKS);
+	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, hint, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
 	    	//PRINTF("Tile [%d][%d] created \n", i, j);
 	        /* Create readiness events for every tile */
