@@ -75,7 +75,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     /* Allocate datablock for right column of the local tile */
 	ocrGuid_t rightDBGuid;
 	u64 *rightDBGuid_data ;
-	ocrDbCreate( &rightDBGuid, &rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+	ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	*rightDBGuid_data = rightVal;
 	ocrDbRelease(rightDBGuid);
 	ocrEventSatisfy(right, rightDBGuid);
@@ -166,7 +166,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             edtParamv.below   = tile_matrix[i][j].below;
             /* Create an event-driven tasks of smith_waterman tasks */
             ocrGuid_t task_guid;
-            ocrEdtCreate(&task_guid, edt_template_guid,
+            ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
                         EDT_PARAM_DEF, NULL /*depv*/,
                         EDT_PROP_NONE, NULL_HINT /*hint*/, NULL /*outputEvent*/);
