@@ -91,6 +91,10 @@ typedef struct{
 typedef struct{
     ocrGuid_t below;
     ocrGuid_t right;
+}RemoteTile_t;
+
+typedef struct{
+	RemoteTile_t remoteTile;
 }Tile_t;
 
 void killAtAffinity(int victim) {
@@ -222,13 +226,16 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	ocrDbCreate(&db_tmp, (void **)&tile_matrix, sizeof(Tile_t*)*(ROWS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	for ( i = 0; i < ROWS+1; ++i ) {
-		ocrHint_t hint = getDBAffinity(i,0,RANKS);
-	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, &hint, NO_ALLOC);
+	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
-	    	//PRINTF("Tile [%d][%d] created \n", i, j);
+	    	ocrHint_t hint = getDBAffinity(i,j,RANKS);
+	    	ocrGuid_t rem_tile_guid;
+	    	RemoteTile_t rem;
+	    	ocrDbCreate(&rem_tile_guid, (void **)&rem, sizeof(RemoteTile_t), DB_PROP_NONE, &hint, NO_ALLOC);
+	    	tile_matrix[i][j].remoteTile = rem;
 	        /* Create readiness events for every tile */
-            ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
-            ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].remoteTile.below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].remoteTile.right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
 	    }
 	}
 
@@ -258,10 +265,10 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
                         EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
-            ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
+            ocrAddDependence(tile_matrix[i][j-1].remoteTile.right, task_guid, 0, DB_MODE_CONST);
 
             /* add dependency to the EDT from the north */
-            ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
+            ocrAddDependence(tile_matrix[i-1][j].remoteTile.below, task_guid, 1, DB_MODE_CONST);
         }
     }
 
