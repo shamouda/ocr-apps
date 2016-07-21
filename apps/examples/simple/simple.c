@@ -55,11 +55,13 @@ typedef struct{
 }Tile_t;
 
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
+	PRINTF("tileEdt\n");
     u64* leftVal = (u64*)depv[0].ptr;
 	u64* aboveVal = (u64*)depv[1].ptr;
 	
+	PRINTF("tileEdt - before casting \n");
 	TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
-	
+	PRINTF("tileEdt - after casting \n");
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
@@ -148,7 +150,6 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
 	    }
 	}
-	
 
 	initialize_border_values(tile_matrix);
 	ocrGuid_t tileEdt_template_guid;
