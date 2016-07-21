@@ -115,6 +115,7 @@ static void initialize_border_values( Tile_t** tile_matrix ) {
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_0_j_below);
+        PRINTF("satisfy (%d, %d).below ...\n", 0, j);
         ocrEventSatisfy(tile_matrix[0][j].below, db_guid_0_j_below);
     }
 
@@ -128,6 +129,7 @@ static void initialize_border_values( Tile_t** tile_matrix ) {
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_i_0_rc);
+        PRINTF("satisfy (%d, %d).right ...\n", i, 0);
         ocrEventSatisfy(tile_matrix[i][0].right, db_guid_i_0_rc);
     }
 }
