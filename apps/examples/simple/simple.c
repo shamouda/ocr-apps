@@ -28,13 +28,7 @@ u64 getAffinityCount() {
 	return affinityCount;
 }
 
-ocrHint_t getEDTAffinity(int i, int j, int affinityCount) {
-	return getAffinity(i,j,affinityCount, 0);
-}
 
-ocrHint_t getDBAffinity(int i, int j, int affinityCount) {
-	return getAffinity(i,j,affinityCount, 1);
-}
 
 ocrHint_t getAffinity(int i, int j, int affinityCount, int type) {
 #ifdef AFFINITY_MODE_ROW
@@ -54,6 +48,14 @@ ocrHint_t getAffinity(int i, int j, int affinityCount, int type) {
 	    ocrSetHintValue(&hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(aff));
 	}
 	return hint;
+}
+
+ocrHint_t getEDTAffinity(int i, int j, int affinityCount) {
+	return getAffinity(i,j,affinityCount, 0);
+}
+
+ocrHint_t getDBAffinity(int i, int j, int affinityCount) {
+	return getAffinity(i,j,affinityCount, 1);
 }
 
 int currentAffinity() {
