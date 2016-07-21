@@ -139,6 +139,17 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	PRINTF("main paramc=%d  depc %d \n", paramc, depc);
 
+	int rows = 3, cols = 3;
+    u32 input;
+    u32 argc = getArgc(depv[0].ptr);
+    if((argc != 3)) {
+        PRINTF("Usage: simple <rows> <cols>, defaulting to 3 X 3\n");
+    } else {
+        rows = atoi(getArgv(depv[0].ptr, 1));
+        cols = atoi(getArgv(depv[0].ptr, 2));
+    }
+
+    PRINTF("working with %d X %d \n", rows, cols);
     TileEdtPRM_t edtParamv;
     u64 i, j;
 
@@ -218,3 +229,15 @@ tileEdt  :<- (i=3) (j=3) (above=2) (left=4)
          :-> (toRight=6) (toBottom=3)
 */
 
+/* Result 2 X 2
+
+tileEdt  :<- (i=1) (j=1) (above=0) (left=0)
+         :-> (toRight=1) (toBottom=0)
+tileEdt  :<- (i=1) (j=2) (above=0) (left=1)
+         :-> (toRight=2) (toBottom=1)
+
+tileEdt  :<- (i=2) (j=1) (above=0) (left=0)
+         :-> (toRight=1) (toBottom=0)
+tileEdt  :<- (i=2) (j=2) (above=1) (left=1)
+         :-> (toRight=3) (toBottom=1)
+*/
