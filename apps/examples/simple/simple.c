@@ -74,7 +74,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 
     /* Allocate datablock for right column of the local tile */
 	ocrGuid_t rightDBGuid;
-	void *rightDBGuid_data ;
+	u64 *rightDBGuid_data ;
 	ocrDbCreate( &rightDBGuid, &rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	*rightDBGuid_data = rightVal;
 	ocrDbRelease(rightDBGuid);
