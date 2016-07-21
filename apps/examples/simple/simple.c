@@ -98,7 +98,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
     u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
     /* Satisfy the right and below events */
-    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", printCurrentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
+    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", printCurrentAffinity("tileEdt"), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
 	ocrGuid_t rightDBGuid;
@@ -212,7 +212,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
                         EDT_PARAM_DEF, NULL /*depv*/,
-                        EDT_PROP_NONE, getAffinity(i,j,RANKS) /*hint*/, NULL /*outputEvent*/);
+                        EDT_PROP_NONE, &getAffinity(i,j,RANKS) /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
             ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
