@@ -156,7 +156,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	initialize_border_tiles(tile_matrix);
 	ocrGuid_t tileEdt_template_guid;
-	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(smithWaterman) /*paramc*/, 2 /*depc*/);
+	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 2 /*depc*/);
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
