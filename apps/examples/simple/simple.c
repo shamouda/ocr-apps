@@ -182,7 +182,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
         ocrDbRelease(db_guid_0_j_below);
         //PRINTF("satisfy (%d, %d).below ...\n", 0, j);
-        ocrEventSatisfy(tile_matrix[0][j].below, db_guid_0_j_below);
+        ocrEventSatisfy(tile_matrix[0][j].remoteTile.below, db_guid_0_j_below);
     }
 
     /* Create datablocks for the right columns for tiles[i][0]
@@ -196,7 +196,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
         ocrDbRelease(db_guid_i_0_rc);
         //PRINTF("satisfy (%d, %d).right ...\n", i, 0);
-        ocrEventSatisfy(tile_matrix[i][0].right, db_guid_i_0_rc);
+        ocrEventSatisfy(tile_matrix[i][0].remoteTile.right, db_guid_i_0_rc);
     }
 }
 
