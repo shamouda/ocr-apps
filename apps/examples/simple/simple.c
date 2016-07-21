@@ -209,10 +209,11 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             edtParamv.below   = tile_matrix[i][j].below;
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
+            ocrHint_t hint = getAffinity(i,j,RANKS);
             ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
                         EDT_PARAM_DEF, NULL /*depv*/,
-                        EDT_PROP_NONE, &getAffinity(i,j,RANKS) /*hint*/, NULL /*outputEvent*/);
+                        EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
             ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
