@@ -404,6 +404,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
     PRINTF("Allocated tile matrix\n");
 
+    PRINTF("PRMNUM  %d\n", PRMNUM(smithWaterman));
     initialize_border_values(tile_matrix, n_tiles_width, n_tiles_height, tile_width, tile_height);
     ocrGuid_t smith_waterman_task_template_guid;
     ocrEdtTemplateCreate(&smith_waterman_task_template_guid, smith_waterman_task, PRMNUM(smithWaterman) /*paramc*/, 4 /*depc*/);
