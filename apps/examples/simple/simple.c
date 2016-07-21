@@ -13,8 +13,8 @@
 #include <time.h>
 
 
-#define COLS 5
-#define ROWS 5
+#define COLS 3
+#define ROWS 3
 
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
 #define RIGHT_EQUATION(i, j, above,left) (0.50*(i+j+above+left))
@@ -25,6 +25,7 @@
 u64 getAffinityCount() {
 	u64 affinityCount;
 	ocrAffinityCount(AFFINITY_PD, &affinityCount);
+	PRINTF("Affinity count %d \n", affinityCount);
 	return affinityCount;
 }
 
@@ -39,6 +40,7 @@ ocrHint_t getAffinity(int i, int j, int affinityCount) {
 	ocrHint_t hint;
 	ocrHintInit(&hint,OCR_HINT_EDT_T);
 	ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
+	PRINTF("Affinity(%d,%d)=%d \n", i, j, affinityCount );
 	return hint;
 }
 
@@ -59,9 +61,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     u64* leftVal = (u64*)depv[0].ptr;
 	u64* aboveVal = (u64*)depv[1].ptr;
 	
-	PRINTF("tileEdt - before casting \n");
 	TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
-	PRINTF("tileEdt - after casting \n");
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
@@ -103,7 +103,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 }
 
 
-static void initialize_border_values( Tile_t** tile_matrix ) {
+static void initialize_border_tiles( Tile_t** tile_matrix ) {
 	u64 i, j;
     /* Create datablocks for the bottom right elements and bottom rows for tiles[0][j]
      * and Satisfy the bottom row event for tile[0][j] with the respective datablock */
@@ -147,15 +147,16 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	for ( i = 0; i < ROWS+1; ++i ) {
 	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
+	    	PRINTF("Tile [%d][%d] created \n", i, j);
 	        /* Create readiness events for every tile */
             ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
             ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
 	    }
 	}
 
-	initialize_border_values(tile_matrix);
+	initialize_border_tiles(tile_matrix);
 	ocrGuid_t tileEdt_template_guid;
-	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, 1 /*paramc*/, 2 /*depc*/);
+	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(smithWaterman) /*paramc*/, 2 /*depc*/);
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
@@ -175,10 +176,10 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
                         EDT_PARAM_DEF, NULL /*depv*/,
                         EDT_PROP_NONE, NULL_HINT /*hint*/, NULL /*outputEvent*/);
 
-            /* add dependency to the EDT from the west tile's right column ready event */
+            /* add dependency to the EDT from the west */
             ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
 
-            /* add dependency to the EDT from the north tile's bottom row ready event */
+            /* add dependency to the EDT from the north */
             ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
         }
     }
