@@ -216,5 +216,5 @@ tileEdt  :<- (i=3) (j=2) (above=1) (left=2)
          :-> (toRight=4) (toBottom=2)
 tileEdt  :<- (i=3) (j=3) (above=2) (left=4)
          :-> (toRight=6) (toBottom=3)
-*
+*/
 
