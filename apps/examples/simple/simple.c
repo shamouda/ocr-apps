@@ -12,10 +12,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
-#define COLS 2
-#define ROWS 2
-
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
 #define RIGHT_EQUATION(i, j, above,left) (0.50*(i+j+above+left))
 
@@ -47,6 +43,8 @@ ocrHint_t getAffinity(int i, int j, int affinityCount) {
 typedef struct{
     u64 i;
     u64 j;
+    u64 COLS;
+    u64 ROWS;
     ocrGuid_t below;
     ocrGuid_t right;
 }TileEdtPRM_t;
@@ -65,6 +63,8 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
+	u64 ROWS = (u64) paramIn->ROWS;
+	u64 COLS = (u64) paramIn->COLS;
 	ocrGuid_t right = paramIn->right;
 	ocrGuid_t below = paramIn->below;
 
@@ -103,7 +103,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 }
 
 
-static void initialize_border_tiles( Tile_t** tile_matrix ) {
+static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) {
 	u64 i, j;
     /* Create datablocks for the bottom right elements and bottom rows for tiles[0][j]
      * and Satisfy the bottom row event for tile[0][j] with the respective datablock */
@@ -139,17 +139,17 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	PRINTF("main paramc=%d  depc %d \n", paramc, depc);
 
-	int rows = 3, cols = 3;
+	int ROWS = 3, COLS = 3;
     u32 input;
     u32 argc = getArgc(depv[0].ptr);
     if((argc != 3)) {
         PRINTF("Usage: simple <rows> <cols>, defaulting to 3 X 3\n");
     } else {
-        rows = atoi(getArgv(depv[0].ptr, 1));
-        cols = atoi(getArgv(depv[0].ptr, 2));
+    	ROWS = atoi(getArgv(depv[0].ptr, 1));
+    	COLS = atoi(getArgv(depv[0].ptr, 2));
     }
+    PRINTF("working with %d X %d \n", ROWS, COLS);
 
-    PRINTF("working with %d X %d \n", rows, cols);
     TileEdtPRM_t edtParamv;
     u64 i, j;
 
@@ -167,7 +167,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	    }
 	}
 
-	initialize_border_tiles(tile_matrix);
+	initialize_border_tiles(tile_matrix, rows, cols);
 	ocrGuid_t tileEdt_template_guid;
 	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 2 /*depc*/);
 
@@ -178,6 +178,9 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             /* Box function paramIn and put them on the heap for lifetime */
         	edtParamv.i = i;
         	edtParamv.j = j;
+        	edtParamv.ROWS = ROWS;
+			edtParamv.COLS = COLS;
+
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
