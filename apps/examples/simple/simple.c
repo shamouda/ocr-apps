@@ -91,10 +91,6 @@ typedef struct{
 typedef struct{
     ocrGuid_t below;
     ocrGuid_t right;
-}RemoteTile_t;
-
-typedef struct{
-	RemoteTile_t remoteTile;
 }Tile_t;
 
 void killAtAffinity(int victim) {
@@ -182,7 +178,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
         ocrDbRelease(db_guid_0_j_below);
         //PRINTF("satisfy (%d, %d).below ...\n", 0, j);
-        ocrEventSatisfy(tile_matrix[0][j].remoteTile.below, db_guid_0_j_below);
+        ocrEventSatisfy(tile_matrix[0][j].below, db_guid_0_j_below);
     }
 
     /* Create datablocks for the right columns for tiles[i][0]
@@ -196,7 +192,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
         ocrDbRelease(db_guid_i_0_rc);
         //PRINTF("satisfy (%d, %d).right ...\n", i, 0);
-        ocrEventSatisfy(tile_matrix[i][0].remoteTile.right, db_guid_i_0_rc);
+        ocrEventSatisfy(tile_matrix[i][0].right, db_guid_i_0_rc);
     }
 }
 
@@ -228,14 +224,9 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 	for ( i = 0; i < ROWS+1; ++i ) {
 	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
-	    	ocrHint_t hint = getDBAffinity(i,j,RANKS);
-	    	ocrGuid_t rem_tile_guid;
-	    	RemoteTile_t rem;
-	    	ocrDbCreate(&rem_tile_guid, (void **)&rem, sizeof(RemoteTile_t), DB_PROP_NONE, &hint, NO_ALLOC);
-	    	tile_matrix[i][j].remoteTile = rem;
 	        /* Create readiness events for every tile */
-            ocrEventCreate(&(tile_matrix[i][j].remoteTile.below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
-            ocrEventCreate(&(tile_matrix[i][j].remoteTile.right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
 	    }
 	}
 
@@ -254,8 +245,8 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 			edtParamv.COLS = COLS;
 			edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
-            edtParamv.right = tile_matrix[i][j].remoteTile.right;
-            edtParamv.below   = tile_matrix[i][j].remoteTile.below;
+            edtParamv.right = tile_matrix[i][j].right;
+            edtParamv.below   = tile_matrix[i][j].below;
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
@@ -265,10 +256,10 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
                         EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
-            ocrAddDependence(tile_matrix[i][j-1].remoteTile.right, task_guid, 0, DB_MODE_CONST);
+            ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
 
             /* add dependency to the EDT from the north */
-            ocrAddDependence(tile_matrix[i-1][j].remoteTile.below, task_guid, 1, DB_MODE_CONST);
+            ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
         }
     }
 
