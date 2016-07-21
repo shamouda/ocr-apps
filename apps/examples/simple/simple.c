@@ -41,6 +41,30 @@ ocrHint_t getAffinity(int i, int j, int affinityCount) {
 	return hint;
 }
 
+int printCurrentAffinity(char* edtName) {
+	// Create EDT hints
+	ocrGuid_t* affinities;
+	u64 affinityCount;
+
+	ocrAffinityCount(AFFINITY_PD, &affinityCount);
+	ocrGuid_t affDbGuid;
+	ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+	ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
+	ocrDbRelease(affDbGuid);
+
+	ocrGuid_t curAffinity;
+	ocrAffinityGetCurrent(&curAffinity);
+
+	int location=0;
+	for (; location < affinityCount; location++) {
+         if (ocrGuidIsEq(curAffinity,affinities[location])){
+        	 //PRINTF("EDT[%s]  Location[%d] \n", edtName, location);
+        	 break;
+         }
+	}
+	return location;
+}
+
 typedef struct{
     u64 i;
     u64 j;
@@ -74,7 +98,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
     u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
     /* Satisfy the right and below events */
-    PRINTF("tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
+    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", printCurrentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
 	ocrGuid_t rightDBGuid;
@@ -137,9 +161,7 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
 
 ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-
-	PRINTF("main paramc=%d  depc %d \n", paramc, depc);
-
+	int RANKS = getAffinityCount();
 	int ROWS = 3, COLS = 3;
     u32 input;
     u32 argc = getArgc(depv[0].ptr);
@@ -149,7 +171,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
     	ROWS = atoi(getArgv(depv[0].ptr, 1));
     	COLS = atoi(getArgv(depv[0].ptr, 2));
     }
-    PRINTF("working with %d X %d \n", ROWS, COLS);
+    PRINTF("working with %d X %d   nRanks=%d \n", ROWS, COLS, RANKS);
 
     TileEdtPRM_t edtParamv;
     u64 i, j;
@@ -190,7 +212,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
                         EDT_PARAM_DEF, NULL /*depv*/,
-                        EDT_PROP_NONE, NULL_HINT /*hint*/, NULL /*outputEvent*/);
+                        EDT_PROP_NONE, getAffinity(i,j,RANKS) /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
             ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
