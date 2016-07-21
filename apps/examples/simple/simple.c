@@ -216,7 +216,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	initialize_border_tiles(tile_matrix, ROWS, COLS);
 	ocrGuid_t tileEdt_template_guid;
-	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 2 /*depc*/);
+	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 1 /*depc*/);
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
@@ -240,7 +240,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
                         EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
 
             /* add dependency to the EDT from the west */
-            ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
+            //ocrAddDependence(tile_matrix[i][j-1].right, task_guid, 0, DB_MODE_CONST);
 
             /* add dependency to the EDT from the north */
             ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
