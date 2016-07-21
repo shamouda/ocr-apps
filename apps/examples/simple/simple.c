@@ -65,7 +65,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 	/* Unbox parameters */
 	u64 i = (u64) paramIn->i;
 	u64 j = (u64) paramIn->j;
-	
+	PRINTF("tileEdt - started (i=%d) (j=%d) \n", i, j);
 	/* Run a smith-waterman on the local tile */
     //step();
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
