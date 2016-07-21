@@ -191,7 +191,6 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
         allocated[0] = 0;
 
         ocrDbRelease(db_guid_i_0_rc);
-        //PRINTF("satisfy (%d, %d).right ...\n", i, 0);
         ocrEventSatisfy(tile_matrix[i][0].right, db_guid_i_0_rc);
     }
 }
