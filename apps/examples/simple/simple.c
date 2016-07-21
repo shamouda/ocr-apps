@@ -28,7 +28,15 @@ u64 getAffinityCount() {
 	return affinityCount;
 }
 
-ocrHint_t getAffinity(int i, int j, int affinityCount) {
+ocrHint_t getEDTAffinity(int i, int j, int affinityCount) {
+	return getAffinity(i,j,affinityCount, 0);
+}
+
+ocrHint_t getDBAffinity(int i, int j, int affinityCount) {
+	return getAffinity(i,j,affinityCount, 1);
+}
+
+ocrHint_t getAffinity(int i, int j, int affinityCount, int type) {
 #ifdef AFFINITY_MODE_ROW
 	int rank = i % affinityCount;
 #else
@@ -37,8 +45,14 @@ ocrHint_t getAffinity(int i, int j, int affinityCount) {
 	ocrGuid_t aff;
 	ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
 	ocrHint_t hint;
-	ocrHintInit(&hint,OCR_HINT_EDT_T);
-	ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
+	if (type == 0 ) {//EDT hint
+	    ocrHintInit(&hint,OCR_HINT_EDT_T);
+	    ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
+	}
+	else{
+		ocrHintInit(&hint,OCR_HINT_DB_T);
+	    ocrSetHintValue(&hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(aff));
+	}
 	return hint;
 }
 
@@ -206,7 +220,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 	ocrDbCreate(&db_tmp, (void **)&tile_matrix, sizeof(Tile_t*)*(ROWS+1), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
 	for ( i = 0; i < ROWS+1; ++i ) {
-		ocrHint_t hint = getAffinity(i,0,RANKS);
+		ocrHint_t hint = getDBAffinity(i,0,RANKS);
 	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, &hint, NO_ALLOC);
 	    for ( j = 0; j < COLS+1; ++j ) {
 	    	//PRINTF("Tile [%d][%d] created \n", i, j);
@@ -235,7 +249,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             edtParamv.below   = tile_matrix[i][j].below;
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
-            ocrHint_t hint = getAffinity(i,j,RANKS);
+            ocrHint_t hint = getEDTAffinity(i,j,RANKS);
             ocrEdtCreate(&task_guid, tileEdt_template_guid,
                         EDT_PARAM_DEF, (u64 *)&edtParamv /*paramv*/,
                         EDT_PARAM_DEF, NULL /*depv*/,
