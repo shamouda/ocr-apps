@@ -13,8 +13,8 @@
 #include <time.h>
 
 
-#define COLS 3
-#define ROWS 3
+#define COLS 2
+#define ROWS 2
 
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
 #define RIGHT_EQUATION(i, j, above,left) (0.50*(i+j+above+left))
@@ -137,6 +137,8 @@ static void initialize_border_tiles( Tile_t** tile_matrix ) {
 
 ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
+	PRINTF("main paramc=%d  depc %d \n", paramc, depc);
+
     TileEdtPRM_t edtParamv;
     u64 i, j;
 
@@ -185,3 +187,34 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
     return NULL_GUID;
 }
+
+
+
+/* Results */
+/*  3 X 3
+tileEdt  :<- (i=1) (j=1) (above=0) (left=0)
+         :-> (toRight=1) (toBottom=0)
+
+tileEdt  :<- (i=1) (j=2) (above=0) (left=1)
+         :-> (toRight=2) (toBottom=1)
+
+tileEdt  :<- (i=1) (j=3) (above=0) (left=2)
+         :-> (toRight=3) (toBottom=1)
+
+
+tileEdt  :<- (i=2) (j=1) (above=0) (left=0)
+         :-> (toRight=1) (toBottom=0)
+tileEdt  :<- (i=2) (j=2) (above=1) (left=1)
+         :-> (toRight=3) (toBottom=1)
+tileEdt  :<- (i=2) (j=3) (above=1) (left=3)
+         :-> (toRight=4) (toBottom=2)
+
+
+tileEdt  :<- (i=3) (j=1) (above=0) (left=0)
+         :-> (toRight=2) (toBottom=1)
+tileEdt  :<- (i=3) (j=2) (above=1) (left=2)
+         :-> (toRight=4) (toBottom=2)
+tileEdt  :<- (i=3) (j=3) (above=2) (left=4)
+         :-> (toRight=6) (toBottom=3)
+*
+
