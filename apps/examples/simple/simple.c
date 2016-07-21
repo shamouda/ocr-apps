@@ -29,10 +29,8 @@ u64 getAffinityCount() {
 ocrHint_t getAffinity(int i, int j, int affinityCount) {
 #ifdef AFFINITY_MODE_ROW
 	int rank = i % affinityCount;
-#elseif AFFINITY_MODE_COL
-	int rank = j % affinityCount;
 #else
-	return NULL;
+	int rank = j % affinityCount;
 #endif
 	ocrGuid_t aff;
 	ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
