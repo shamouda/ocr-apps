@@ -55,7 +55,7 @@ typedef struct{
 }Tile_t;
 
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
-	PRINTF("tileEdt\n");
+	PRINTF("tileEdt paramc=%d\n", paramc);
     u64* leftVal = (u64*)depv[0].ptr;
 	u64* aboveVal = (u64*)depv[1].ptr;
 	
