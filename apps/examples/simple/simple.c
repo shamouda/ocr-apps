@@ -29,15 +29,16 @@ u64 getAffinityCount() {
 ocrHint_t getAffinity(int i, int j, int affinityCount) {
 #ifdef AFFINITY_MODE_ROW
 	int rank = i % affinityCount;
-#else
+#elseif AFFINITY_MODE_COL
 	int rank = j % affinityCount;
+#else
+	return NULL;
 #endif
 	ocrGuid_t aff;
 	ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
 	ocrHint_t hint;
 	ocrHintInit(&hint,OCR_HINT_EDT_T);
 	ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
-	PRINTF("Affinity(%d,%d)=%d \n", i, j, affinityCount );
 	return hint;
 }
 
