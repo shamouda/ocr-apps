@@ -257,6 +257,12 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             edtParamv.below   = tile_matrix[i][j].below;
             edtParamv.tileEdt_template_guid = tileEdt_template_guid;
             edtParamv.aboveDep0 = tile_matrix[i-1][j-1].right;
+            if (i == 1) {
+                edtParamv.aboveDep1 = tile_matrix[i-2][j].below;
+            }
+            else {
+            	edtParamv.aboveDep1 = NULL_GUID;
+            }
             edtParamv.aboveSatBelow = tile_matrix[i-1][j].below;
             edtParamv.aboveSatRight = tile_matrix[i-1][j].right;
             /* Create an event-driven tasks */
