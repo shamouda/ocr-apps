@@ -125,9 +125,9 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     if (!depSuccess) {
     	if (di == 1) { /* above EDT failed  */
     	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above ... \n", currentAffinity(), i, j );
-            recreateAbove(paramIn);
+            //recreateAbove(paramIn);
             PRINTF("Here[%d]  tileEdt(%d,%d) recreate me ... \n", currentAffinity(), i, j );
-            recreateMe(paramIn, depc, depv);
+            //recreateMe(paramIn, depc, depv);
     	}
     	else {
     	    assert(false &&  "Recover right is not supported ...");
@@ -256,6 +256,8 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
             edtParamv.tileEdt_template_guid = tileEdt_template_guid;
+            edtParamv.aboveSatBelow = tile_matrix[i-1][j].below;
+            edtParamv.aboveSatRight = tile_matrix[i-1][j].right;
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
