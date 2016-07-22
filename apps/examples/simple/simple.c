@@ -320,6 +320,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
         for ( j = 1; j < COLS+1; ++j ) {
             PRINTF("createEdt ( %d, %d ) \n", i , j );
             /* Box function paramIn and put them on the heap for lifetime */
+            PRINTF("======z");
             edtParamv.i = i;
             PRINTF("======a");
             edtParamv.j = j;
