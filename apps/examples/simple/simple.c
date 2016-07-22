@@ -260,6 +260,11 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
             /* add dependency to the EDT from the north */
             ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
+
+            ocrAddEventSatisfier(task_guid,tile_matrix[i][j].right);
+
+            ocrAddEventSatisfier(task_guid,tile_matrix[i][j].below);
+
         }
     }
 
