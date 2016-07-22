@@ -86,6 +86,14 @@ typedef struct{
     u64 VICTIM;
     ocrGuid_t below;
     ocrGuid_t right;
+    /* ---  resilience ----*/
+
+    u32 recovering;
+    ocrGuid_t tileEdt_template_guid;
+    ocrGuid_t aboveDep0;
+    ocrGuid_t aboveDep1;
+    ocrGuid_t aboveSatBelow;
+    ocrGuid_t aboveSatRight;
 }TileEdtPRM_t;
 
 typedef struct{
