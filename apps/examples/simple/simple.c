@@ -123,7 +123,15 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     }
 
     if (!depSuccess) {
-        PRINTF("Here[%d]  tileEdt(%d,%d)   returns ....................> \n", currentAffinity(), i, j );
+    	if (di == 1) { /* above EDT failed  */
+    	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above ... \n", currentAffinity(), i, j );
+            recreateAbove(paramIn);
+            PRINTF("Here[%d]  tileEdt(%d,%d) recreate me ... \n", currentAffinity(), i, j );
+            recreateMe(paramIn, depc, depv);
+    	}
+    	else {
+    	    assert(false &&  "Recover right is not supported ...");
+    	}
         return FAILURE_GUID;
     }
 
