@@ -329,18 +329,23 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
-
+            PRINTF("======1");
             edtParamv.tileEdt_template_guid = tileEdt_template_guid;
+            PRINTF("======2");
             edtParamv.aboveDep0 = tile_matrix[i-1][j-1].right;
+            PRINTF("======3");
             if (i == 1) {
                 edtParamv.aboveDep1 = tile_matrix[i-2][j].below;
+                PRINTF("======4");
             }
             else {
             	edtParamv.aboveDep1 = NULL_GUID;
+            	PRINTF("======5");
             }
             edtParamv.aboveSatBelow = tile_matrix[i-1][j].below;
+            PRINTF("======6");
             edtParamv.aboveSatRight = tile_matrix[i-1][j].right;
-
+            PRINTF("======7");
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
