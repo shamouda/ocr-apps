@@ -305,8 +305,8 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
         ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, &db_hint, NO_ALLOC);
         for ( j = 0; j < COLS+1; ++j ) {
             /* Create readiness events for every tile */
-            ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
-            ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_IDEM_T, EVT_PROP_TAKES_ARG);
+            ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_IDEM_T, EVT_PROP_TAKES_ARG);
         }
     }
 
