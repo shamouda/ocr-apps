@@ -18,9 +18,6 @@
 #define BELOW_EQUATION(i, j, above,left) (0.25*(i+j+above+left))
 #define RIGHT_EQUATION(i, j, above,left) (0.50*(i+j+above+left))
 
-//row affinity
-#define AFFINITY_MODE_ROW
-
 u64 getAffinityCount() {
     u64 affinityCount;
     ocrAffinityCount(AFFINITY_PD, &affinityCount);
@@ -28,14 +25,8 @@ u64 getAffinityCount() {
     return affinityCount;
 }
 
-
-
 ocrHint_t getAffinity(int i, int j, int affinityCount, int type) {
-#ifdef AFFINITY_MODE_ROW
     int rank = i % affinityCount;
-#else
-    int rank = j % affinityCount;
-#endif
     ocrGuid_t aff;
     ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
     ocrHint_t hint;
@@ -86,6 +77,14 @@ typedef struct{
     u64 VICTIM;
     ocrGuid_t below;
     ocrGuid_t right;
+    /* ---  resilience ----*/
+
+    u8 recovering;
+    ocrGuid_t tileEdt_template_guid;
+    ocrGuid_t aboveDep0;
+    ocrGuid_t aboveDep1;
+    ocrGuid_t aboveSatBelow;
+    ocrGuid_t aboveSatRight;
 }TileEdtPRM_t;
 
 typedef struct{
@@ -100,7 +99,73 @@ void killAtAffinity(int victim) {
     }
 }
 
-ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
+
+ocrGuid_t recreateAbove(TileEdtPRM_t *paramIn) {
+	int RANKS = getAffinityCount();
+	ocrGuid_t tileEdt_template_guid = paramIn->tileEdt_template_guid;
+
+	/*compute above param from current EDT paramIn*/
+	u64 above_i = paramIn->i - 1;
+    u64 above_j = paramIn->j;
+
+	TileEdtPRM_t aboveParamv;
+	aboveParamv.i = above_i;
+	aboveParamv.j = above_j;
+	aboveParamv.recovering = 1;
+	aboveParamv.ROWS = paramIn->ROWS;
+	aboveParamv.COLS = paramIn->COLS;
+	aboveParamv.VICTIM = paramIn->VICTIM;
+    // forcefully pass guids we need to satisfy on completion
+	aboveParamv.right = paramIn->aboveSatRight;
+	aboveParamv.below   = paramIn->aboveSatBelow;
+
+	aboveParamv.tileEdt_template_guid = tileEdt_template_guid;
+	aboveParamv.aboveDep0 = NULL_GUID;
+    aboveParamv.aboveDep1 = NULL_GUID;
+    aboveParamv.aboveSatBelow = NULL_GUID;
+    aboveParamv.aboveSatRight = NULL_GUID;
+
+
+	ocrGuid_t task_guid;
+	ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
+	ocrEdtCreate(&task_guid, tileEdt_template_guid,
+	            EDT_PARAM_DEF, (u64 *)&aboveParamv /*paramv*/,
+	            EDT_PARAM_DEF, NULL /*depv*/,
+	            EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
+
+
+    /* add dependency to the EDT from the west */
+    ocrAddDependence(paramIn->aboveDep0, task_guid, 0, DB_MODE_CONST);
+
+    /* add dependency to the EDT from the north */
+    ocrAddDependence(paramIn->aboveDep1, task_guid, 1, DB_MODE_CONST);
+
+    ocrAddEventSatisfier(task_guid,paramIn->aboveDep0);
+
+    ocrAddEventSatisfier(task_guid,paramIn->aboveDep1);
+
+    return task_guid;
+
+}
+ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[]) {
+	paramIn->recovering = 1;
+	ocrGuid_t task_guid;
+    ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
+	ocrEdtCreate(&task_guid, paramIn->tileEdt_template_guid,
+	            EDT_PARAM_DEF, (u64 *)&paramIn /*paramv*/,
+		        EDT_PARAM_DEF, NULL /*depv*/,
+		        EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
+
+ 	/* left dependence is assumed to never fail (produced by same process in a row distribution) */
+	ocrAddDependence(depv[0].guid, task_guid, 0, DB_MODE_CONST);
+
+	/* re-depend on the above tile below value */
+	ocrAddDependence(paramIn->aboveSatBelow, task_guid, 1, DB_MODE_CONST);
+
+	ocrAddEventSatisfier(task_guid,paramIn->aboveSatBelow);
+}
+
+ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
     /* Unbox parameters */
     u64 i = (u64) paramIn->i;
@@ -113,7 +178,13 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 
     killAtAffinity(VICTIM);
 
-    PRINTF("Here[%d]  tileEdt(%d,%d) checking the dependencies \n", currentAffinity(), i, j );
+    if (paramIn->recovering) {
+    	PRINTF("Here[%d]  tileEdt(%d,%d) recovering \n", currentAffinity(), i, j );
+    }
+    else {
+        PRINTF("Here[%d]  tileEdt(%d,%d) checking the dependencies \n", currentAffinity(), i, j );
+    }
+
     bool depSuccess = true;
     u64 di = 0;
     for ( ; di < depc; di++) {
@@ -124,6 +195,10 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     }
 
     if (!depSuccess) {
+    	if (di == 1) { /* above EDT failed  */
+            recreateAbove(paramIn);
+            recreateMe(paramIn, depc, depv);
+    	}
         PRINTF("Here[%d]  tileEdt(%d,%d)   returns ....................> \n", currentAffinity(), i, j );
         return FAILURE_GUID;
     }
@@ -195,6 +270,11 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
     }
 }
 
+//no dependencies
+//params includes the parameters of the failed EDT
+ocrGuid_t restartEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
+
+}
 
 ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
     int RANKS = getAffinityCount();
@@ -241,12 +321,25 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             /* Box function paramIn and put them on the heap for lifetime */
             edtParamv.i = i;
             edtParamv.j = j;
+            edtParamv.recovering = 0;
             edtParamv.ROWS = ROWS;
             edtParamv.COLS = COLS;
             edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
+
+            edtParamv.tileEdt_template_guid = tileEdt_template_guid;
+            edtParamv.aboveDep0 = tile_matrix[i-1][j-1].right;
+            if (i == 1) {
+                edtParamv.aboveDep1 = tile_matrix[i-2][j].below;
+            }
+            else {
+            	edtParamv.aboveDep1 = NULL_GUID;
+            }
+            edtParamv.aboveSatBelow = tile_matrix[i-1][j].below;
+            edtParamv.aboveSatRight = tile_matrix[i-1][j].right;
+
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
