@@ -317,43 +317,31 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
+    	PRINTF("createEdt ----------------------------->( %d, - ) \n", i  );
+
         for ( j = 1; j < COLS+1; ++j ) {
-            PRINTF("createEdt ------>( %d, %d ) \n", i , j );
+        	PRINTF("createEdt ----------------------------->( %d, %d ) \n", i , j );
+
             /* Box function paramIn and put them on the heap for lifetime */
-            PRINTF("======z");
             edtParamv.i = i;
-            PRINTF("======a");
             edtParamv.j = j;
-            PRINTF("======b");
             edtParamv.recovering = 0;
-            PRINTF("======c");
             edtParamv.ROWS = ROWS;
-            PRINTF("======d");
             edtParamv.COLS = COLS;
-            PRINTF("======e");
             edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
-            PRINTF("======(-1)");
             edtParamv.right = tile_matrix[i][j].right;
-            PRINTF("======(0)");
             edtParamv.below   = tile_matrix[i][j].below;
-            PRINTF("======1");
             edtParamv.tileEdt_template_guid = tileEdt_template_guid;
-            PRINTF("======2");
             edtParamv.aboveDep0 = tile_matrix[i-1][j-1].right;
-            PRINTF("======3");
             if (i == 1) {
                 edtParamv.aboveDep1 = tile_matrix[i-2][j].below;
-                PRINTF("======4");
             }
             else {
             	edtParamv.aboveDep1 = NULL_GUID;
-            	PRINTF("======5");
             }
             edtParamv.aboveSatBelow = tile_matrix[i-1][j].below;
-            PRINTF("======6");
             edtParamv.aboveSatRight = tile_matrix[i-1][j].right;
-            PRINTF("======7");
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
