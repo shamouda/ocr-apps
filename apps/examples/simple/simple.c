@@ -22,60 +22,60 @@
 #define AFFINITY_MODE_ROW
 
 u64 getAffinityCount() {
-	u64 affinityCount;
-	ocrAffinityCount(AFFINITY_PD, &affinityCount);
-	PRINTF("Affinity count %d \n", affinityCount);
-	return affinityCount;
+    u64 affinityCount;
+    ocrAffinityCount(AFFINITY_PD, &affinityCount);
+    PRINTF("Affinity count %d \n", affinityCount);
+    return affinityCount;
 }
 
 
 
 ocrHint_t getAffinity(int i, int j, int affinityCount, int type) {
 #ifdef AFFINITY_MODE_ROW
-	int rank = i % affinityCount;
+    int rank = i % affinityCount;
 #else
-	int rank = j % affinityCount;
+    int rank = j % affinityCount;
 #endif
-	ocrGuid_t aff;
-	ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
-	ocrHint_t hint;
-	if (type == 0 ) {//EDT hint
-	    ocrHintInit(&hint,OCR_HINT_EDT_T);
-	    ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
-	}
-	else{
-		ocrHintInit(&hint,OCR_HINT_DB_T);
-	    ocrSetHintValue(&hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(aff));
-	}
-	return hint;
+    ocrGuid_t aff;
+    ocrAffinityGetAt(AFFINITY_PD, rank, &aff);
+    ocrHint_t hint;
+    if (type == 0 ) {//EDT hint
+        ocrHintInit(&hint,OCR_HINT_EDT_T);
+        ocrSetHintValue(&hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff));
+    }
+    else{
+        ocrHintInit(&hint,OCR_HINT_DB_T);
+        ocrSetHintValue(&hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(aff));
+    }
+    return hint;
 }
 
 ocrHint_t getEDTAffinity(int i, int j, int affinityCount) {
-	return getAffinity(i,j,affinityCount, 0);
+    return getAffinity(i,j,affinityCount, 0);
 }
 
 ocrHint_t getDBAffinity(int i, int j, int affinityCount) {
-	return getAffinity(i,j,affinityCount, 1);
+    return getAffinity(i,j,affinityCount, 1);
 }
 
 int currentAffinity() {
-	// Create EDT hints
-	ocrGuid_t* affinities;
-	u64 affinityCount;
-	ocrAffinityCount(AFFINITY_PD, &affinityCount);
-	ocrGuid_t affDbGuid;
-	ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
-	ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
-	ocrDbRelease(affDbGuid);
-	ocrGuid_t curAffinity;
-	ocrAffinityGetCurrent(&curAffinity);
-	int location=0;
-	for (; location < affinityCount; location++) {
+    // Create EDT hints
+    ocrGuid_t* affinities;
+    u64 affinityCount;
+    ocrAffinityCount(AFFINITY_PD, &affinityCount);
+    ocrGuid_t affDbGuid;
+    ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+    ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
+    ocrDbRelease(affDbGuid);
+    ocrGuid_t curAffinity;
+    ocrAffinityGetCurrent(&curAffinity);
+    int location=0;
+    for (; location < affinityCount; location++) {
          if (ocrGuidIsEq(curAffinity,affinities[location])){
-        	 break;
+             break;
          }
-	}
-	return location;
+    }
+    return location;
 }
 
 typedef struct{
@@ -94,44 +94,44 @@ typedef struct{
 }Tile_t;
 
 void killAtAffinity(int victim) {
-	int currAffinity = currentAffinity();
-	if (currAffinity == victim) {
+    int currAffinity = currentAffinity();
+    if (currAffinity == victim) {
         assert ( false && "killing here" );
-	}
+    }
 }
 
 ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
-	/* Unbox parameters */
-	u64 i = (u64) paramIn->i;
-	u64 j = (u64) paramIn->j;
-	u64 ROWS = (u64) paramIn->ROWS;
-	u64 COLS = (u64) paramIn->COLS;
-	u64 VICTIM = (u64) paramIn->VICTIM;
-	ocrGuid_t right = paramIn->right;
-	ocrGuid_t below = paramIn->below;
+    /* Unbox parameters */
+    u64 i = (u64) paramIn->i;
+    u64 j = (u64) paramIn->j;
+    u64 ROWS = (u64) paramIn->ROWS;
+    u64 COLS = (u64) paramIn->COLS;
+    u64 VICTIM = (u64) paramIn->VICTIM;
+    ocrGuid_t right = paramIn->right;
+    ocrGuid_t below = paramIn->below;
 
-	killAtAffinity(VICTIM);
+    killAtAffinity(VICTIM);
 
     PRINTF("Here[%d]  tileEdt(%d,%d) checking the dependencies \n", currentAffinity(), i, j );
     bool depSuccess = true;
     u64 di = 0;
     for ( ; di < depc; di++) {
-	    if (ocrGuidIsFailure(depv[di].guid)) {
+        if (ocrGuidIsFailure(depv[di].guid)) {
               PRINTF("Here[%d]  tileEdt(%d,%d)   dep(%d) is a FAILURE_GUID ... \n", currentAffinity(), i, j , di);
               depSuccess = false;
-	    }
-	}
+        }
+    }
 
     if (!depSuccess) {
-    	PRINTF("Here[%d]  tileEdt(%d,%d)   returns ....................> \n", currentAffinity(), i, j );
-    	return FAILURE_GUID;
+        PRINTF("Here[%d]  tileEdt(%d,%d)   returns ....................> \n", currentAffinity(), i, j );
+        return FAILURE_GUID;
     }
 
     u64* leftVal = (u64*)depv[0].ptr;
-	u64* aboveVal = (u64*)depv[1].ptr;
+    u64* aboveVal = (u64*)depv[1].ptr;
 
-	/* Run computation on local tile */
+    /* Run computation on local tile */
     u64 belowVal = BELOW_EQUATION(i,j,*aboveVal,*leftVal);
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
     u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
@@ -139,34 +139,34 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
-	ocrGuid_t rightDBGuid;
-	u64 *rightDBGuid_data ;
-	ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
-	*rightDBGuid_data = rightVal;
-	ocrDbRelease(rightDBGuid);
-	ocrEventSatisfy(right, rightDBGuid);
+    ocrGuid_t rightDBGuid;
+    u64 *rightDBGuid_data ;
+    ocrDbCreate( &rightDBGuid, (void *)&rightDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+    *rightDBGuid_data = rightVal;
+    ocrDbRelease(rightDBGuid);
+    ocrEventSatisfy(right, rightDBGuid);
 
     /* Allocate datablock for below value */
-	ocrGuid_t belowDBGuid;
-	u64* belowDBGuid_data = NULL;
-	ocrDbCreate( &belowDBGuid, (void *)&belowDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
-	*belowDBGuid_data = belowVal;
-	ocrDbRelease(belowDBGuid);
-	ocrEventSatisfy(below, belowDBGuid);
+    ocrGuid_t belowDBGuid;
+    u64* belowDBGuid_data = NULL;
+    ocrDbCreate( &belowDBGuid, (void *)&belowDBGuid_data, sizeof(u64), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+    *belowDBGuid_data = belowVal;
+    ocrDbRelease(belowDBGuid);
+    ocrEventSatisfy(below, belowDBGuid);
 
     /* We can also free all the input DBs we get */
     ocrDbDestroy(depv[0].guid);
     ocrDbDestroy(depv[1].guid);
     
     if ( i == ROWS && j == COLS ) {
-	    PRINTF("Shutting down,  score = %d \n", localVal);
-    	ocrShutdown();
+        PRINTF("Shutting down,  score = %d \n", localVal);
+        ocrShutdown();
     }
     return NULL_GUID;
 }
 
 static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) {
-	u64 i, j;
+    u64 i, j;
     /* Create datablocks for the bottom right elements and bottom rows for tiles[0][j]
      * and Satisfy the bottom row event for tile[0][j] with the respective datablock */
     for ( j = 1; j < COLS + 1; ++j ) {
@@ -197,18 +197,18 @@ static void initialize_border_tiles( Tile_t** tile_matrix , int ROWS, int COLS) 
 
 
 ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-	int RANKS = getAffinityCount();
-	int ROWS = 3, COLS = 3;
-	int VICTIM = -1;
+    int RANKS = getAffinityCount();
+    int ROWS = 3, COLS = 3;
+    int VICTIM = -1;
     u32 input;
     u32 argc = getArgc(depv[0].ptr);
 
     if((argc != 4)) {
         PRINTF("Usage: simple <rows> <cols> <victim>, defaulting to 3 X 3 , no victim \n");
     } else {
-    	ROWS = atoi(getArgv(depv[0].ptr, 1));
-    	COLS = atoi(getArgv(depv[0].ptr, 2));
-    	VICTIM = atoi(getArgv(depv[0].ptr, 3));
+        ROWS = atoi(getArgv(depv[0].ptr, 1));
+        COLS = atoi(getArgv(depv[0].ptr, 2));
+        VICTIM = atoi(getArgv(depv[0].ptr, 3));
     }
 
     PRINTF("working with %d X %d   nRanks=%d \n", ROWS, COLS, RANKS);
@@ -220,30 +220,30 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
     Tile_t** tile_matrix;
 
     ocrHint_t db_hint = getDBAffinity(1,2,RANKS);
-	ocrDbCreate(&db_tmp, (void **)&tile_matrix, sizeof(Tile_t*)*(ROWS+1), DB_PROP_NONE, &db_hint, NO_ALLOC);
-	for ( i = 0; i < ROWS+1; ++i ) {
-	    ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, &db_hint, NO_ALLOC);
-	    for ( j = 0; j < COLS+1; ++j ) {
-	        /* Create readiness events for every tile */
+    ocrDbCreate(&db_tmp, (void **)&tile_matrix, sizeof(Tile_t*)*(ROWS+1), DB_PROP_NONE, &db_hint, NO_ALLOC);
+    for ( i = 0; i < ROWS+1; ++i ) {
+        ocrDbCreate(&db_tmp, (void **)&tile_matrix[i], sizeof(Tile_t)*(COLS+1), DB_PROP_NONE, &db_hint, NO_ALLOC);
+        for ( j = 0; j < COLS+1; ++j ) {
+            /* Create readiness events for every tile */
             ocrEventCreate(&(tile_matrix[i][j].below ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
             ocrEventCreate(&(tile_matrix[i][j].right ), OCR_EVENT_STICKY_T, EVT_PROP_TAKES_ARG);
-	    }
-	}
+        }
+    }
 
-	initialize_border_tiles(tile_matrix, ROWS, COLS);
-	ocrGuid_t tileEdt_template_guid;
-	ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 2 /*depc*/);
+    initialize_border_tiles(tile_matrix, ROWS, COLS);
+    ocrGuid_t tileEdt_template_guid;
+    ocrEdtTemplateCreate(&tileEdt_template_guid, tileEdt, PRMNUM(TileEdt) /*paramc*/, 2 /*depc*/);
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
         for ( j = 1; j < COLS+1; ++j ) {
-        	//PRINTF("createEdt ( %d, %d ) \n", i , j );
+            //PRINTF("createEdt ( %d, %d ) \n", i , j );
             /* Box function paramIn and put them on the heap for lifetime */
-        	edtParamv.i = i;
-        	edtParamv.j = j;
-        	edtParamv.ROWS = ROWS;
-			edtParamv.COLS = COLS;
-			edtParamv.VICTIM = VICTIM;
+            edtParamv.i = i;
+            edtParamv.j = j;
+            edtParamv.ROWS = ROWS;
+            edtParamv.COLS = COLS;
+            edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
