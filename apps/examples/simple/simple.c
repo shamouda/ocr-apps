@@ -247,6 +247,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             // forcefully pass guids we need to satisfy on completion
             edtParamv.right = tile_matrix[i][j].right;
             edtParamv.below   = tile_matrix[i][j].below;
+            edtParamv.tileEdt_template_guid = tileEdt_template_guid;
             /* Create an event-driven tasks */
             ocrGuid_t task_guid;
             ocrHint_t hint = getEDTAffinity(i,j,RANKS);
