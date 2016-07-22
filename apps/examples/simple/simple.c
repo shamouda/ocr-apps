@@ -321,10 +321,15 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             PRINTF("createEdt ( %d, %d ) \n", i , j );
             /* Box function paramIn and put them on the heap for lifetime */
             edtParamv.i = i;
+            PRINTF("======a");
             edtParamv.j = j;
+            PRINTF("======b");
             edtParamv.recovering = 0;
+            PRINTF("======c");
             edtParamv.ROWS = ROWS;
+            PRINTF("======d");
             edtParamv.COLS = COLS;
+            PRINTF("======e");
             edtParamv.VICTIM = VICTIM;
             // forcefully pass guids we need to satisfy on completion
             PRINTF("======(-1)");
