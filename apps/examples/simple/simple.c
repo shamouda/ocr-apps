@@ -79,7 +79,7 @@ typedef struct{
     ocrGuid_t right;
     /* ---  resilience ----*/
 
-    u8 recovering;
+    u32 recovering;
     ocrGuid_t tileEdt_template_guid;
     ocrGuid_t aboveDep0;
     ocrGuid_t aboveDep1;
@@ -317,12 +317,9 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
 
     for ( i = 1; i < ROWS+1; ++i ) {
-    	PRINTF("createEdt ----------------------------->( %d, - ) \n", i  );
-
         for ( j = 1; j < COLS+1; ++j ) {
         	PRINTF("createEdt ----------------------------->( %d, %d ) \n", i , j );
             /* Box function paramIn and put them on the heap for lifetime */
-        	/*
             edtParamv.i = i;
             edtParamv.j = j;
             edtParamv.recovering = 0;
