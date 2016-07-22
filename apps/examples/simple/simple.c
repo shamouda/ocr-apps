@@ -99,7 +99,74 @@ void killAtAffinity(int victim) {
     }
 }
 
-ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
+
+ocrGuid_t recreateAbove(TileEdtPRM_t *paramIn) {
+	int RANKS = getAffinityCount();
+	ocrGuid_t tileEdt_template_guid = paramIn->tileEdt_template_guid;
+
+	/*compute above param from current EDT paramIn*/
+	u64 above_i = paramIn->i - 1;
+    u64 above_j = paramIn->j;
+
+	TileEdtPRM_t aboveParamv;
+	aboveParamv.i = above_i;
+	aboveParamv.j = above_j;
+	aboveParamv.recovering = 1;
+	aboveParamv.ROWS = paramIn->ROWS;
+	aboveParamv.COLS = paramIn->COLS;
+	aboveParamv.VICTIM = paramIn->VICTIM;
+    // forcefully pass guids we need to satisfy on completion
+	aboveParamv.right = paramIn->aboveSatRight;
+	aboveParamv.below   = paramIn->aboveSatBelow;
+
+	aboveParamv.tileEdt_template_guid = tileEdt_template_guid;
+	aboveParamv.aboveDep0 = NULL_GUID;
+    aboveParamv.aboveDep1 = NULL_GUID;
+    aboveParamv.aboveSatBelow = NULL_GUID;
+    aboveParamv.aboveSatRight = NULL_GUID;
+
+
+	ocrGuid_t task_guid;
+	ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
+	ocrEdtCreate(&task_guid, tileEdt_template_guid,
+	            EDT_PARAM_DEF, (u64 *)&aboveParamv /*paramv*/,
+	            EDT_PARAM_DEF, NULL /*depv*/,
+	            EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
+
+
+    /* add dependency to the EDT from the west */
+    ocrAddDependence(paramIn->aboveDep0, task_guid, 0, DB_MODE_CONST);
+
+    /* add dependency to the EDT from the north */
+    ocrAddDependence(paramIn->aboveDep1, task_guid, 1, DB_MODE_CONST);
+
+    ocrAddEventSatisfier(task_guid,paramIn->aboveDep0);
+
+    ocrAddEventSatisfier(task_guid,paramIn->aboveDep1);
+
+    return task_guid;
+
+}
+ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[]) {
+	int RANKS = getAffinityCount();
+	paramIn->recovering = 1;
+	ocrGuid_t task_guid;
+    ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
+	ocrEdtCreate(&task_guid, paramIn->tileEdt_template_guid,
+	            EDT_PARAM_DEF, (u64 *)&paramIn /*paramv*/,
+		        EDT_PARAM_DEF, NULL /*depv*/,
+		        EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
+
+ 	/* left dependence is assumed to never fail (produced by same process in a row distribution) */
+	ocrAddDependence(depv[0].guid, task_guid, 0, DB_MODE_CONST);
+
+	/* re-depend on the above tile below value */
+	ocrAddDependence(paramIn->aboveSatBelow, task_guid, 1, DB_MODE_CONST);
+
+	ocrAddEventSatisfier(task_guid,paramIn->aboveSatBelow);
+}
+
+ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     TileEdtPRM_t *paramIn = (TileEdtPRM_t *)paramv;
     /* Unbox parameters */
     u64 i = (u64) paramIn->i;
@@ -112,7 +179,13 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
 
     killAtAffinity(VICTIM);
 
-    PRINTF("Here[%d]  tileEdt(%d,%d) checking the dependencies \n", currentAffinity(), i, j );
+    if (paramIn->recovering) {
+    	PRINTF("Here[%d]  tileEdt(%d,%d) recovering \n", currentAffinity(), i, j );
+    }
+    else {
+        PRINTF("Here[%d]  tileEdt(%d,%d) starting \n", currentAffinity(), i, j );
+    }
+
     bool depSuccess = true;
     u64 di = 0;
     for ( ; di < depc; di++) {
@@ -125,9 +198,9 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc , ocrEdtDep_t depv[]) {
     if (!depSuccess) {
     	if (di == 1) { /* above EDT failed  */
     	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above ... \n", currentAffinity(), i, j );
-            //recreateAbove(paramIn);
+            recreateAbove(paramIn);
             PRINTF("Here[%d]  tileEdt(%d,%d) recreate me ... \n", currentAffinity(), i, j );
-            //recreateMe(paramIn, depc, depv);
+            recreateMe(paramIn, depc, depv);
     	}
     	else {
     	    assert(false &&  "Recover right is not supported ...");
