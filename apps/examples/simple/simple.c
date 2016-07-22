@@ -148,6 +148,7 @@ ocrGuid_t recreateAbove(TileEdtPRM_t *paramIn) {
 
 }
 ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[]) {
+	int RANKS = getAffinityCount();
 	paramIn->recovering = 1;
 	ocrGuid_t task_guid;
     ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
