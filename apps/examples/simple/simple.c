@@ -142,10 +142,8 @@ void recreateAbove(TileEdtPRM_t *paramIn, ocrGuid_t* belowEvent) {
     ocrAddEventSatisfier(task_guid,paramIn->aboveDep0);
 
     ocrAddEventSatisfier(task_guid,paramIn->aboveDep1);
-
-    return task_guid;
-
 }
+
 ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[], ocrGuid_t* belowEvent) {
 	TileEdtPRM_t newParamIn = *paramIn;
 	int RANKS = getAffinityCount();
@@ -161,7 +159,7 @@ ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[], ocrGui
 	ocrAddDependence(depv[0].guid, task_guid, 0, DB_MODE_CONST);
 
 	/* re-depend on the above tile below value */
-	ocrAddDependence(belowEvent, task_guid, 1, DB_MODE_CONST);
+	ocrAddDependence(*belowEvent, task_guid, 1, DB_MODE_CONST);
 
 	ocrAddEventSatisfier(task_guid,paramIn->aboveSatBelow);
 }
