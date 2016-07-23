@@ -178,17 +178,17 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     killAtAffinity(VICTIM);
 
     if (paramIn->recovering) {
-    	PRINTF("Here[%d]  tileEdt(%d,%d) recovering \n", currentAffinity(), i, j );
+    	PRINTF("Here[%d]  tileEdt(%d,%d) RE-starting ... \n", currentAffinity(), i, j );
     }
     else {
-        PRINTF("Here[%d]  tileEdt(%d,%d) starting \n", currentAffinity(), i, j );
+        PRINTF("Here[%d]  tileEdt(%d,%d) starting ... \n", currentAffinity(), i, j );
     }
 
     bool depSuccess = true;
     u64 di = 0;
     for ( ; di < depc; di++) {
         if (ocrGuidIsFailure(depv[di].guid)) {
-              PRINTF("Here[%d]  tileEdt(%d,%d)   dep(%d) is a FAILURE_GUID ... \n", currentAffinity(), i, j , di);
+              PRINTF("Here[%d]  tileEdt(%d,%d)  dep(%d) is a FAILURE_GUID ... \n", currentAffinity(), i, j , di);
               depSuccess = false;
               break;
         }
@@ -196,15 +196,16 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
 
     if (!depSuccess) {
     	if (di == 1) { /* above EDT failed  */
-    	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above ... \n", currentAffinity(), i, j );
+    	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above EDT ... \n", currentAffinity(), i, j );
     	    ocrGuid_t belowEvent;
             recreateAbove(paramIn, &belowEvent);
-            PRINTF("Here[%d]  tileEdt(%d,%d) recreate me ... \n", currentAffinity(), i, j );
+            PRINTF("Here[%d]  tileEdt(%d,%d) recreate my EDT ... \n", currentAffinity(), i, j );
             recreateMe(paramIn, depc, depv, belowEvent);
     	}
     	else {
     	    assert(false &&  "Recover right is not supported ...");
     	}
+    	PRINTF("Here[%d]  tileEdt(%d,%d) RETURN ... \n", currentAffinity(), i, j );
         return FAILURE_GUID;
     }
 
@@ -241,7 +242,8 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
         PRINTF("Shutting down,  score = %d \n", localVal);
         ocrShutdown();
     }
-    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
+
+    PRINTF("Here[%d]  tileEdt(i=%d) (j=%d) SUCCEEDED  (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j, localVal, rightVal, belowVal);
     return NULL_GUID;
 }
 
@@ -291,7 +293,7 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
         VICTIM = atoi(getArgv(depv[0].ptr, 3));
     }
 
-    PRINTF("working with %d X %d   nRanks=%d \n", ROWS, COLS, RANKS);
+    PRINTF("Working with %d X %d tiles  nRanks=%d \n", ROWS, COLS, RANKS);
 
     TileEdtPRM_t edtParamv;
     u64 i, j;
@@ -351,6 +353,9 @@ ocrGuid_t mainEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
             /* add dependency to the EDT from the north */
             ocrAddDependence(tile_matrix[i-1][j].below, task_guid, 1, DB_MODE_CONST);
 
+            /**************************************************/
+            //don't let the PD satisfy right events with a FAILURE_GUID, otherwise,
+            //we will need to recover, not only above events, but right events
             //ocrAddEventSatisfier(task_guid,tile_matrix[i][j].right);
 
             ocrAddEventSatisfier(task_guid,tile_matrix[i][j].below);
