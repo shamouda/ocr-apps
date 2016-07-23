@@ -144,7 +144,7 @@ void recreateAbove(TileEdtPRM_t *paramIn, ocrGuid_t* belowEvent) {
     ocrAddEventSatisfier(task_guid,paramIn->aboveDep1);
 }
 
-ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[], ocrGuid_t* belowEvent) {
+ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[], ocrGuid_t belowEvent) {
 	TileEdtPRM_t newParamIn = *paramIn;
 	int RANKS = getAffinityCount();
 	newParamIn.recovering = 1;
@@ -159,7 +159,7 @@ ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[], ocrGui
 	ocrAddDependence(depv[0].guid, task_guid, 0, DB_MODE_CONST);
 
 	/* re-depend on the above tile below value */
-	ocrAddDependence(*belowEvent, task_guid, 1, DB_MODE_CONST);
+	ocrAddDependence(belowEvent, task_guid, 1, DB_MODE_CONST);
 
 	ocrAddEventSatisfier(task_guid,paramIn->aboveSatBelow);
 }
@@ -197,8 +197,8 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     if (!depSuccess) {
     	if (di == 1) { /* above EDT failed  */
     	    PRINTF("Here[%d]  tileEdt(%d,%d) recreate above ... \n", currentAffinity(), i, j );
-    	    ocrGuid_t* belowEvent;
-            recreateAbove(paramIn, belowEvent);
+    	    ocrGuid_t belowEvent;
+            recreateAbove(paramIn, &belowEvent);
             PRINTF("Here[%d]  tileEdt(%d,%d) recreate me ... \n", currentAffinity(), i, j );
             recreateMe(paramIn, depc, depv, belowEvent);
     	}
