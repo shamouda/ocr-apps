@@ -148,12 +148,13 @@ ocrGuid_t recreateAbove(TileEdtPRM_t *paramIn) {
 
 }
 ocrGuid_t recreateMe(TileEdtPRM_t *paramIn, u32 depc, ocrEdtDep_t depv[]) {
+	TileEdtPRM_t newParamIn = *paramIn;
 	int RANKS = getAffinityCount();
-	paramIn->recovering = 1;
+	newParamIn->recovering = 1;
 	ocrGuid_t task_guid;
     ocrHint_t hint = getEDTAffinity(paramIn->i,paramIn->j,RANKS);
 	ocrEdtCreate(&task_guid, paramIn->tileEdt_template_guid,
-	            EDT_PARAM_DEF, (u64 *)&paramIn /*paramv*/,
+	            EDT_PARAM_DEF, (u64 *)&newParamIn /*paramv*/,
 		        EDT_PARAM_DEF, NULL /*depv*/,
 		        EDT_PROP_NONE, &hint /*hint*/, NULL /*outputEvent*/);
 
@@ -217,7 +218,6 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     u64 rightVal = RIGHT_EQUATION(i,j,*aboveVal,*leftVal);
     u64 localVal = LOCAL_EQUATION(i,j,*aboveVal,*leftVal);
     /* Satisfy the right and below events */
-    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
 
     /* Allocate datablock for rightValue */
     ocrGuid_t rightDBGuid;
@@ -243,6 +243,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
         PRINTF("Shutting down,  score = %d \n", localVal);
         ocrShutdown();
     }
+    PRINTF("Here[%d] tileEdt  :<- (i=%d) (j=%d) (above=%d) (left=%d) (localScore:%d)  :-> (toRight=%d) (toBottom=%d) \n", currentAffinity(), i, j,*aboveVal,*leftVal, localVal, rightVal, belowVal);
     return NULL_GUID;
 }
 
