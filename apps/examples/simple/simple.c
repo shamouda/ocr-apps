@@ -77,8 +77,8 @@ typedef struct{
     u64 VICTIM;
     ocrGuid_t below;
     ocrGuid_t right;
-    /* ---  resilience ----*/
 
+    /* ---  resilience ----*/
     u32 recovering;
     ocrGuid_t tileEdt_template_guid;
     ocrGuid_t aboveDep0;
@@ -192,6 +192,7 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
         if (ocrGuidIsFailure(depv[di].guid)) {
               PRINTF("Here[%d]  tileEdt(%d,%d)   dep(%d) is a FAILURE_GUID ... \n", currentAffinity(), i, j , di);
               depSuccess = false;
+              break;
         }
     }
 
