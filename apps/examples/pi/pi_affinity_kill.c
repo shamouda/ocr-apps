@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+#include <unistd.h>
 
 #define ITERS 10000000
 #define TASKS_COUNT 5
@@ -28,72 +29,72 @@
 /******************************   Utility Functions   ***********************************/
 
 void printCurrentAffinity(char* edtName) {
-	// Create EDT hints
-	ocrGuid_t* affinities;
-	u64 affinityCount;
-	////////getAffinityGuids(&affinityCount, &affinities);
+    // Create EDT hints
+    ocrGuid_t* affinities;
+    u64 affinityCount;
+    ////////getAffinityGuids(&affinityCount, &affinities);
 
-	ocrAffinityCount(AFFINITY_PD, &affinityCount);
-	ocrGuid_t affDbGuid;
-	ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
-	ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
-	ocrDbRelease(affDbGuid);
+    ocrAffinityCount(AFFINITY_PD, &affinityCount);
+    ocrGuid_t affDbGuid;
+    ocrDbCreate(&affDbGuid, (void **) &affinities, affinityCount*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+    ocrAffinityGet(AFFINITY_PD, &affinityCount, affinities);
+    ocrDbRelease(affDbGuid);
 
-	ocrGuid_t curAffinity;
-	ocrAffinityGetCurrent(&curAffinity);
+    ocrGuid_t curAffinity;
+    ocrAffinityGetCurrent(&curAffinity);
 
-	int location=0;
-	for (; location < affinityCount; location++) {
+    int location=0;
+    for (; location < affinityCount; location++) {
          if (ocrGuidIsEq(curAffinity,affinities[location])){
-        	 PRINTF("EDT[%s]  Location[%d] \n", edtName, location);
+             PRINTF("EDT[%s]  Location[%d] \n", edtName, location);
          }
-	}
+    }
 }
 
 void getEdtAffinityHints(ocrHint_t* p0Hint, ocrHint_t* p1Hint, ocrHint_t* p2Hint) {
-	ocrGuid_t aff0, aff1, aff2;
+    ocrGuid_t aff0, aff1, aff2;
 
-	ocrAffinityGetAt(AFFINITY_PD, 0, &aff0);
-	ocrAffinityGetAt(AFFINITY_PD, 1, &aff1);
-	ocrAffinityGetAt(AFFINITY_PD, 2, &aff2);
+    ocrAffinityGetAt(AFFINITY_PD, 0, &aff0);
+    ocrAffinityGetAt(AFFINITY_PD, 1, &aff1);
+    ocrAffinityGetAt(AFFINITY_PD, 2, &aff2);
 
-	ocrHintInit(p0Hint,OCR_HINT_EDT_T);
-	ocrSetHintValue(p0Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff0));
+    ocrHintInit(p0Hint,OCR_HINT_EDT_T);
+    ocrSetHintValue(p0Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff0));
 
-	ocrHintInit(p1Hint,OCR_HINT_EDT_T);
-	ocrSetHintValue(p1Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff1));
+    ocrHintInit(p1Hint,OCR_HINT_EDT_T);
+    ocrSetHintValue(p1Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff1));
 
-	ocrHintInit(p2Hint,OCR_HINT_EDT_T);
-	ocrSetHintValue(p2Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff2));
+    ocrHintInit(p2Hint,OCR_HINT_EDT_T);
+    ocrSetHintValue(p2Hint, OCR_HINT_EDT_AFFINITY, ocrAffinityToHintValue(aff2));
 }
 
 void getDbAffinityHints(ocrHint_t* p0Hint, ocrHint_t* p1Hint, ocrGuid_t* affinities) {
-	ocrHintInit(p0Hint,OCR_HINT_DB_T);
-	ocrSetHintValue(p0Hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(affinities[0]));
+    ocrHintInit(p0Hint,OCR_HINT_DB_T);
+    ocrSetHintValue(p0Hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(affinities[0]));
 
-	ocrHintInit(p1Hint,OCR_HINT_DB_T);
-	ocrSetHintValue(p1Hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(affinities[1]));
+    ocrHintInit(p1Hint,OCR_HINT_DB_T);
+    ocrSetHintValue(p1Hint, OCR_HINT_DB_AFFINITY, ocrAffinityToHintValue(affinities[1]));
 }
 
 void getAffinityGuids(u64* affinityCount, ocrGuid_t* affinities) {
-	ocrAffinityCount(AFFINITY_PD, affinityCount);
-	ocrGuid_t guid;
-	ocrDbCreate(&guid, (void **) &affinities, (*affinityCount)*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
-	ocrAffinityGet(AFFINITY_PD, affinityCount, affinities);
-	ocrDbRelease(guid);
+    ocrAffinityCount(AFFINITY_PD, affinityCount);
+    ocrGuid_t guid;
+    ocrDbCreate(&guid, (void **) &affinities, (*affinityCount)*sizeof(ocrGuid_t), DB_PROP_NONE, NULL_HINT, NO_ALLOC);
+    ocrAffinityGet(AFFINITY_PD, affinityCount, affinities);
+    ocrDbRelease(guid);
 
-	PRINTF("Affinities count = %d \n ", *affinityCount);
-	int r = 0;
-	for (; r < *affinityCount; r++) {
-	    PRINTF("Affinity[%d] = "GUIDF"\n", r , GUIDA(affinities[r]));
-	}
+    PRINTF("Affinities count = %d \n ", *affinityCount);
+    int r = 0;
+    for (; r < *affinityCount; r++) {
+        PRINTF("Affinity[%d] = "GUIDF"\n", r , GUIDA(affinities[r]));
+    }
 }
 
 /******************************   Utility Functions End ***********************************/
 
 
 ocrGuid_t workerEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-	printCurrentAffinity("workerEdt");
+    printCurrentAffinity("workerEdt");
 
     struct drand48_data drand_buf;
     int seed = time(NULL);
@@ -121,20 +122,20 @@ ocrGuid_t workerEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 }
 
 ocrGuid_t shutdownEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-	printCurrentAffinity("shutdownEdt");
+    printCurrentAffinity("shutdownEdt");
     u32 sumPoints = 0;
     u32 successfulTasksCount = 0;
     float PI = 0.0;
     int i = 0;
     for (i = 0 ; i < TASKS_COUNT; i++) {
-    	if (!ocrGuidIsFailure(depv[i].guid)) {
-    		u32* taskOutput = depv[i].ptr;
-        	sumPoints += *taskOutput;
-        	successfulTasksCount ++;
-    	}
-    	else {
-    		PRINTF("WARNING - Ignoring input from failed task %d \n" , i);
-    	}
+        if (!ocrGuidIsFailure(depv[i].guid)) {
+            u32* taskOutput = depv[i].ptr;
+            sumPoints += *taskOutput;
+            successfulTasksCount ++;
+        }
+        else {
+            PRINTF("WARNING - Ignoring input from failed task %d \n" , i);
+        }
     }
 
     PI = 4.0f * sumPoints / (ITERS * successfulTasksCount) ;
@@ -150,15 +151,15 @@ ocrGuid_t shutdownEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 }
 
 ocrGuid_t killEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-	printCurrentAffinity("killEdt");
-	//sleep for some time before killing the EDT's process
-	usleep(100);
+    printCurrentAffinity("killEdt");
+    //sleep for some time before killing the EDT's process
+    sleep(1);
     assert(false);
     return NULL_GUID;
 }
 
 ocrGuid_t mainEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
-	printCurrentAffinity("mainEdt");
+    printCurrentAffinity("mainEdt");
 
     /********* Prepare Affinity Hints  *************/
 
@@ -184,18 +185,18 @@ ocrGuid_t mainEdt(u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[]) {
 
         ocrGuid_t templateGuid;
         if (i==0) {
-        	templateGuid = killEdtTemplateGuid;
+            templateGuid = killEdtTemplateGuid;
         }
         else{
-        	templateGuid = workerEdtTemplateGuid;
+            templateGuid = workerEdtTemplateGuid;
         }
 
         if (i < TASKS_COUNT/2) {
-        	ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
+            ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
                             /*prop=*/EDT_PROP_NONE, &p1EdtAffinityHint, &workerOutputEventGuid);
         }
         else {
-        	ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
+            ocrEdtCreate(&workerEdtGuid, templateGuid, EDT_PARAM_DEF, NULL, EDT_PARAM_DEF, NULL,
                             /*prop=*/EDT_PROP_NONE, &p2EdtAffinityHint, &workerOutputEventGuid);
         }
 
