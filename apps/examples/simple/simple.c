@@ -235,8 +235,12 @@ ocrGuid_t tileEdt ( u32 paramc, u64* paramv, u32 depc, ocrEdtDep_t depv[] ) {
     ocrEventSatisfy(below, belowDBGuid);
 
     /* We can also free all the input DBs we get */
-    ocrDbDestroy(depv[0].guid);
-    ocrDbDestroy(depv[1].guid);
+
+    for (di = 0 ; di < depc; di++) {
+        if (!ocrGuidIsFailure(depv[di].guid)) {
+            ocrDbDestroy(depv[di].guid);
+        }
+    }
     
     if ( i == ROWS && j == COLS ) {
         PRINTF("Shutting down,  score = %d \n", localVal);
